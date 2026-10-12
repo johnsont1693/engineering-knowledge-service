@@ -1,0 +1,55 @@
+SHARED CONTRACT
+===============
+contract.json is the only shared data contract for both implementations. Its
+source of truth is immutable Git object IDs and every fact citation is
+repository ID + full commit + path + line range + Git blob SHA.
+
+SHARED CORE API
+===============
+core/index.mjs exports:
+
+  ingestRepositories(specs, options)
+    specs: [{id, displayName?, checkout, commit?, accessGroup, includePaths?}]
+    options: {includePaths?: string[], allowedPaths?: string[], allowPaths?: string[]}
+    commit may be omitted ONLY to resolve that checkout's current HEAD locally;
+    output always records the full resolved 40-character commit. No fetch, checkout,
+    branch inference, worktree reads, code execution, or dependency installation.
+    At least one allowlist is required for each repository; omission fails
+    before Git commands. spec.includePaths and the options includePaths,
+    allowedPaths, or allowPaths lists are non-empty arrays (max 100 patterns,
+    max 512 characters per pattern); the latter two are aliases. A path must
+    match at least one pattern in every supplied list before cat-file size/blob
+    reads. Git tree metadata (names, modes, object IDs) is enumerated first.
+    Patterns are case-sensitive, full repo-relative paths anchored at the root:
+    * matches zero or more non-slash characters; ? matches exactly one
+    non-slash character; ** matches zero or more characters including slashes;
+    and **/ matches zero or more complete directory components. Thus
+    analysis/*.py matches direct children only, while analysis/**/*.py matches
+    direct and nested children. Slash is the only separator. Absolute paths,
+    drive/colon syntax, backslashes, empty, "." or ".." components, controls,
+    whitespace padding, and bracket/brace expressions are rejected. No glob
+    escaping, expansion, or character classes are supported. Safety exclusions
+    remain in force even when a pattern matches.
+    Filtered paths are reported and make repository coverage partial.
+    Returns a contract.json conforming index with fully cited facts/chunks.
+
+  validateIndex(index)
+    Throws a diagnostic error for schema/semantic issues; otherwise returns index.
+
+  searchIndex(index, {query, repositoryIds?, maxResults?})
+    Returns all exact-token/substring matches with full path/commit/line citations,
+    coverage/truncation status and no top-K presentation as a complete answer.
+    By default returns every match. maxResults is an optional explicit positive
+    safe-integer ceiling; truncation always makes status partial. Passing
+    Number.MAX_SAFE_INTEGER is accepted and does not impose a smaller hidden cap.
+
+  repositorySummary(index, repositoryId)
+    Returns grounded extracted facts with citations and ingestion coverage/warnings.
+
+  compareFact(index, {kind, name?})
+    Enumerates every authorized repo (authorization filtering happens before call)
+    and returns all values/unknowns with citations. Missing evidence is unknown.
+
+Shared code must be read-only, deterministic, dependency-free, and fail closed.
+Unsupported formats/path patterns are reported; source text is not treated as
+instructions. No test/demo dataset is included in deliverable code.

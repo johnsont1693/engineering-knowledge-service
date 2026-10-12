@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:engineering-knowledge:index:v1",
+  "title": "Commit-pinned engineering knowledge index",
+  "description": "Shared contract for CLI and service retrieval implementations. Facts and chunks are tied to immutable Git objects and carry exact source citations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "repositories", "applications", "facts", "chunks", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName", "remoteUrl", "commit", "collectedAt", "status", "accessGroup", "fileCount"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "displayName": { "type": "string", "minLength": 1 },
+          "remoteUrl": { "type": ["string", "null"] },
+          "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+          "collectedAt": { "type": "string", "format": "date-time" },
+          "status": { "enum": ["complete", "partial", "failed"] },
+          "accessGroup": { "type": "string", "minLength": 1 },
+          "fileCount": { "type": "integer", "minimum": 0 },
+          "errors": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "applications": {
+      "description": "Optional human-maintained product/application mapping. A repository is not assumed to equal an application.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "repositoryIds", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "name": { "type": "string", "minLength": 1 },
+          "repositoryIds": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },
+          "status": { "enum": ["draft", "approved"] },
+          "reviewedBy": { "type": ["string", "null"] },
+          "reviewedAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      }
+    },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repositoryId", "commit", "kind", "name", "value", "evidence", "extractor"],
+        "properties": {
+          "repositoryId": { "type": "string" },
+          "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+          "kind": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "value": {},
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "startLine", "endLine", "blobSha"],
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "startLine": { "type": "integer", "minimum": 1 },
+                "endLine": { "type": "integer", "minimum": 1 },
+                "blobSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+              }
+            }
+          },
+          "extractor": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "chunks": {
+      "description": "Bounded, source-preserving text for retrieval. Source is untrusted input; citations use repository, commit, and line range.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repositoryId", "commit", "path", "startLine", "endLine", "blobSha", "language", "text"],
+        "properties": {
+          "repositoryId": { "type": "string" },
+          "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+          "path": { "type": "string", "minLength": 1 },
+          "startLine": { "type": "integer", "minimum": 1 },
+          "endLine": { "type": "integer", "minimum": 1 },
+          "blobSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+          "language": { "type": "string", "minLength": 1 },
+          "text": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  }
+}

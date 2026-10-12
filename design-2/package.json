@@ -1,0 +1,11 @@
+{
+  "name": "engineering-knowledge-local-service",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "answerKeyIncluded": false,
+  "cases": [
+    {
+      "id": "exact-phrase-with-citations",
+      "tool": "search_repository_code",
+      "input": { "query": "\"exact phrase from an approved repository\"" },
+      "evaluation": "Every returned item must match the phrase and include repository ID, full commit, path, line range, and blob SHA."
+    },
+    {
+      "id": "lexical-search-coverage",
+      "tool": "search_repository_code",
+      "input": { "query": "two lexical terms" },
+      "evaluation": "Check that every authorized match is returned, with explicit match count, truncation, and partial-collection status."
+    },
+    {
+      "id": "missing-fact-is-unknown",
+      "tool": "compare_repository_fact",
+      "input": { "kind": "a fact kind present in only some approved sources" },
+      "evaluation": "Check exhaustive enumeration of every authorized repository and require missing evidence to be labeled unknown."
+    },
+    {
+      "id": "unauthorized-repository-non-disclosure",
+      "tool": "get_repository_profile",
+      "input": { "repositoryId": "an identifier outside the caller's server-side groups" },
+      "evaluation": "Check that the response does not distinguish a forbidden repository from a nonexistent repository."
+    },
+    {
+      "id": "application-mapping-is-human-configured",
+      "tool": "resolve_application",
+      "input": { "query": "a human-approved application name" },
+      "evaluation": "Check that only an explicitly approved mapping is returned; repository names must not create application mappings."
+    }
+  ]
+}

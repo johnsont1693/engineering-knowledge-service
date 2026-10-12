@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:engineering-knowledge:production-auth-boundary:v1",
+  "title": "Production identity boundary design input (not runtime configuration)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["authorizationMode", "repositoryBinding", "modelBoundary"],
+  "allOf": [
+    {
+      "if": { "properties": { "authorizationMode": { "const": "github-app-per-user" } } },
+      "then": {
+        "properties": {
+          "repositoryBinding": {
+            "required": ["credentialReference"]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "authorizationMode": { "const": "repository-bound-service-identity" } } },
+      "then": {
+        "properties": {
+          "repositoryBinding": {
+            "required": ["entraScopes", "credentialReference"],
+            "properties": {
+              "entraScopes": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "authorizationMode": {
+      "enum": ["github-app-per-user", "repository-bound-service-identity"],
+      "description": "A selected implementation must prove repository-level authorization; Azure RBAC alone is insufficient."
+    },
+    "repositoryBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enforceExactRepositoryAllowlist", "enforceImmutableCommit"],
+      "properties": {
+        "enforceExactRepositoryAllowlist": { "const": true },
+        "enforceImmutableCommit": { "const": true },
+        "entraScopes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Required and approved Microsoft Entra delegated/application scopes; not Azure role assignments."
+        },
+        "credentialReference": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reference to a tenant-managed secret; never put a credential value in this design document."
+        }
+      }
+    },
+    "modelBoundary": {
+      "enum": ["copilot-client-provided-llm", "separately-approved-foundry"],
+      "description": "The local deterministic MCP service does not perform model inference."
+    }
+  }
+}
